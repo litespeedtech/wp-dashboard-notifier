@@ -5,7 +5,6 @@
  * Description:       WordPress dashboard notifier
  * Version:           1.0
  * Author:            LiteSpeed Technologies
- * Author URI:        https://github.com/litespeedtech/wp-dashboard-notifier
  * License:           GPLv3
  * License URI:       http://www.gnu.org/licenses/gpl.html
  * Text Domain:       dash-notifier
@@ -27,6 +26,7 @@
 
  */
 defined( 'WPINC' ) || exit ;
+// define( 'DASH_NOTIFIER_MSG', json_encode( array( 'msg' => 'This is a message from Godaddy. We recently increase the server speed by installed LSWS with LSCache module. Now it supports LSCWP. LiteSpeed Cache for WordPress (LSCWP) is an all-in-one site acceleration plugin, featuring an exclusive server-level cache and a collection of optimization features.', 'plugin' => 'litespeed-cache' ) ) ) ;
 
 // Storage hook
 if ( defined( 'DASH_NOTIFIER_MSG' ) ) {
@@ -51,11 +51,36 @@ function dash_notifier_save_msg()
 	if ( $msg && ! empty( $msg[ 'msg' ] ) ) {
 		$existing_msg = dash_notifier_get_msg() ;
 
+		$plugin = $plugin_name = '' ;
+		if ( ! empty( $msg[ 'plugin' ] ) ) {
+			$plugin = $msg[ 'plugin' ] ;
+
+			if ( ! empty( $msg[ 'plugin_name' ] ) ) {
+				$plugin_name = $msg[ 'plugin_name' ] ;
+			}
+			// Query plugin name
+			else {
+				$data = wp_remote_retrieve_body( wp_remote_get( 'http://api.wordpress.org/plugins/info/1.0/' . $plugin . '.json' ) ) ;
+				if ( ! $data ) {
+					return ;
+				}
+
+				$data = json_decode( $data, true ) ;
+
+				if ( empty( $data[ 'name' ] ) ) {
+					return ;
+				}
+
+				$plugin_name = $data[ 'name' ] ;
+			}
+		}
+
+
 		// Append msg
 		$existing_msg[ 'msg' ] = $msg[ 'msg' ] ;
-		$existing_msg[ 'msg_md5_previous' ] = $existing_msg[ 'msg_md5' ] ;
 		$existing_msg[ 'msg_md5' ] = md5( $msg[ 'msg' ] ) ;
-		$existing_msg[ 'plugin' ] = ! empty( $msg[ 'plugin' ] ) ? $msg[ 'plugin' ] : '' ;
+		$existing_msg[ 'plugin' ] = $plugin ;
+		$existing_msg[ 'plugin_name' ] = $plugin_name ;
 
 		update_option( 'dash_notifier.msg', $existing_msg ) ;
 	}
@@ -112,6 +137,15 @@ function dash_notifier_show_msg()
 		return ;
 	}
 
+	$dismiss_txt = __( 'Dismiss' ) ;
+
+	$install_txt = '' ;
+	if ( ! empty( $msg[ 'plugin' ] ) && ! empty( $msg[ 'plugin_name' ] ) ) {
+		$install_txt = '<a href="" class="install-now button">' . sprintf( __( 'Install %s now' ), $msg[ 'plugin_name' ] ) . '</a>' ;
+	}
+
+	$dont_show = '<a href="" class="button dash-notifier-uninstall">' . __( 'Remove Notifier', 'dash-notifier' ) . '</a>' ;
+
 	echo <<<eot
 	<style>
 	div.dash-notifier-msg {
@@ -137,11 +171,18 @@ function dash_notifier_show_msg()
 		-webkit-transition: all .1s ease-in-out;
 		transition: all .1s ease-in-out;
 	}
+	a.button.dash-notifier-uninstall {
+		margin-left:auto;
+		margin-top:auto;
+	}
 	</style>
 	<div class="updated dash-notifier-msg">
-		<a class="dash-notifier-close notice-dismiss" href="?dash_notifier_dismiss=1">Dismiss</a>
+		<a class="dash-notifier-close notice-dismiss" href="?dash_notifier_dismiss=1">$dismiss_txt</a>
 
-		<p>{$msg[msg]}</p>
+		<p style='display:flex;'>
+			<span>{$msg[msg]} $install_txt</span>
+			$dont_show
+		</p>
 	</div>
 eot;
 }
