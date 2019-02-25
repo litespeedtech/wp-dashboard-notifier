@@ -28,6 +28,12 @@
 defined( 'WPINC' ) || exit ;
 // define( 'DASH_NOTIFIER_MSG', json_encode( array( 'msg' => 'This is a message from Godaddy. We recently increase the server speed by installed LSWS with LSCache module. Now it supports LSCWP. LiteSpeed Cache for WordPress (LSCWP) is an all-in-one site acceleration plugin, featuring an exclusive server-level cache and a collection of optimization features.', 'plugin' => 'litespeed-cache' ) ) ) ;
 
+if ( defined( 'DASH_NOTIFIER_V' ) ) {
+	return ;
+}
+
+define( 'DASH_NOTIFIER_V', '1.0' ) ;
+
 // Storage hook
 if ( defined( 'DASH_NOTIFIER_MSG' ) ) {
 	add_action( 'setup_theme', 'dash_notifier_save_msg' ) ;
@@ -38,11 +44,18 @@ add_action( 'admin_print_styles', 'dash_notifier_admin_init' ) ;
 
 // Dismiss hook
 if ( ! empty( $_GET[ 'dash_notifier_action' ] ) ) {
+	$plugin_file = 'dash-notifier/dash-notifier.php' ;
+
 	switch ( $_GET[ 'dash_notifier_action' ] ) {
 		case 'uninstall':
+			include_once( ABSPATH . 'wp-admin/includes/plugin.php' ) ;
+			file_put_contents( ABSPATH . '.dash_notifier_bypass', date( 'Y-m-d H:i:s' ) ) ;
+			delete_plugins( array( $plugin_file ) ) ;
 			break;
 
 		case 'activate':
+			include_once( ABSPATH . 'wp-admin/includes/plugin.php' ) ;
+
 			break;
 
 		case 'dismiss':
@@ -159,16 +172,18 @@ function dash_notifier_show_msg()
 	if ( ! empty( $msg[ 'plugin' ] ) && ! empty( $msg[ 'plugin_name' ] ) ) {
 		$plugin_path = $msg[ 'plugin' ] . '/' . $msg[ 'plugin' ] . '.php' ;
 		// If plugin installed, no need to show msg
+		include_once( ABSPATH . 'wp-admin/includes/plugin.php' ) ;
 		if ( is_plugin_active( $plugin_path ) ) {
 			return ;
 		}
 
 		// Check if plugin is installed but not activated
-		if ( is_plugin_inactive( $plugin_path ) ) {
-			$install_txt = '<a href="?dash_notifier_action=activate" class="install-now button button-primary button-small">' . sprintf( _x( 'Activate %s', 'plugin' ), $msg[ 'plugin_name' ] ) . '</a>' ;
+		$valid = validate_plugin( $plugin_path ) ;
+		if ( is_wp_error( $valid ) ) {
+			$install_txt = '<a href="?dash_notifier_action=activate" class="install-now button button-primary button-small">' . sprintf( __( 'Install %s now' ), $msg[ 'plugin_name' ] ) . '</a>' ;
 		}
 		else {
-			$install_txt = '<a href="?dash_notifier_action=activate" class="install-now button button-primary button-small">' . sprintf( __( 'Install %s now' ), $msg[ 'plugin_name' ] ) . '</a>' ;
+			$install_txt = '<a href="?dash_notifier_action=activate" class="install-now button button-primary button-small">' . sprintf( _x( 'Activate %s', 'plugin' ), $msg[ 'plugin_name' ] ) . '</a>' ;
 		}
 	}
 
