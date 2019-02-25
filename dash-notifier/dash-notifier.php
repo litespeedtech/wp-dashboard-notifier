@@ -37,8 +37,19 @@ if ( defined( 'DASH_NOTIFIER_MSG' ) ) {
 add_action( 'admin_print_styles', 'dash_notifier_admin_init' ) ;
 
 // Dismiss hook
-if ( ! empty( $_GET[ 'dash_notifier_dismiss' ] ) ) {
-	add_action( 'admin_init', 'dash_notifier_dismiss' ) ;
+if ( ! empty( $_GET[ 'dash_notifier_action' ] ) ) {
+	switch ( $_GET[ 'dash_notifier_action' ] ) {
+		case 'uninstall':
+			break;
+
+		case 'activate':
+			break;
+
+		case 'dismiss':
+		default:
+			add_action( 'admin_init', 'dash_notifier_dismiss' ) ;
+			break;
+	}
 }
 
 /**
@@ -123,6 +134,14 @@ function dash_notifier_admin_init()
 		return ;
 	}
 
+	if ( ! empty( $msg[ 'plugin' ] ) ) {
+		// Check if plugin is installed already
+		include_once( ABSPATH . 'wp-admin/includes/plugin.php' ) ;
+		if ( is_plugin_active( $msg[ 'plugin' ] ) ) {
+			return ;
+		}
+	}
+
 	add_action( 'admin_notices', 'dash_notifier_show_msg' ) ;
 }
 
@@ -133,18 +152,27 @@ function dash_notifier_admin_init()
 function dash_notifier_show_msg()
 {
 	$msg = dash_notifier_get_msg() ;
-	if ( empty( $msg[ 'msg' ] ) ) {
-		return ;
-	}
 
 	$dismiss_txt = __( 'Dismiss' ) ;
 
 	$install_txt = '' ;
 	if ( ! empty( $msg[ 'plugin' ] ) && ! empty( $msg[ 'plugin_name' ] ) ) {
-		$install_txt = '<a href="" class="install-now button">' . sprintf( __( 'Install %s now' ), $msg[ 'plugin_name' ] ) . '</a>' ;
+		$plugin_path = $msg[ 'plugin' ] . '/' . $msg[ 'plugin' ] . '.php' ;
+		// If plugin installed, no need to show msg
+		if ( is_plugin_active( $plugin_path ) ) {
+			return ;
+		}
+
+		// Check if plugin is installed but not activated
+		if ( is_plugin_inactive( $plugin_path ) ) {
+			$install_txt = '<a href="?dash_notifier_action=activate" class="install-now button button-primary button-small">' . sprintf( _x( 'Activate %s', 'plugin' ), $msg[ 'plugin_name' ] ) . '</a>' ;
+		}
+		else {
+			$install_txt = '<a href="?dash_notifier_action=activate" class="install-now button button-primary button-small">' . sprintf( __( 'Install %s now' ), $msg[ 'plugin_name' ] ) . '</a>' ;
+		}
 	}
 
-	$dont_show = '<a href="" class="button dash-notifier-uninstall">' . __( 'Remove Notifier', 'dash-notifier' ) . '</a>' ;
+	$dont_show = '<a href="?dash_notifier_action=uninstall" class="button button-small dash-notifier-uninstall">' . __( 'Never Notify Me Again', 'dash-notifier' ) . '</a>' ;
 
 	echo <<<eot
 	<style>
@@ -177,7 +205,7 @@ function dash_notifier_show_msg()
 	}
 	</style>
 	<div class="updated dash-notifier-msg">
-		<a class="dash-notifier-close notice-dismiss" href="?dash_notifier_dismiss=1">$dismiss_txt</a>
+		<a class="dash-notifier-close notice-dismiss" href="?dash_notifier_action=dismiss">$dismiss_txt</a>
 
 		<p style='display:flex;'>
 			<span>{$msg[msg]} $install_txt</span>
