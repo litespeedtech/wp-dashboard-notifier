@@ -7,27 +7,30 @@ Stable tag: 1.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
-This plugin can be used to notify clients with a banner in WordPress dashboard only. Need to be called via API.
+Developers and Sysadmins, use this plugin to add a notification to clients' WordPress Dashboards via API.
 
 == Description ==
 
-This plugin can be used to notify clients with a banner in WordPress dashboard only. Need to be called via API.
+This plugin can be used by developers and system administrators to add a notification banner to their clients' WordPress Dashboard. It's useful for broadcasting important messages as well as suggesting plugins that clients' might find useful, and is handled through an API.
 
-To add a new banner, predefine a PHP const `DASH_NOTIFIER_MSG` before hook `setup_theme` like below:
+To add a new banner, predefine a PHP constant called `DASH_NOTIFIER_MSG` before the `setup_theme` hook, like so:
 
 ```
 define( 'DASH_NOTIFIER_MSG', json_encode( array( 'msg' => 'Your message to display in banner', 'plugin' => 'your_plugin_slug', 'plugin_name' => 'Your Plugin Name' ) ) ) ;
 ```
 
-The `your_plugin_slug` is optional. If set, there will generate an one click install button along with the message in banner.
+You can define 'DASH_NOTIFIER_MSG' in your own plugin or in `functions.php`, as long as it is bfore `setup_theme`.
 
-If the plugin is https://wordpress.org/plugins/hello-dolly/, the `your_plugin_slug` will be `hello-dolly` and `Plugin Name` will be `Hello Dolly`.
+`plugin` is optional. If set, an install button will be included with the message, allowing the client to install the plugin in one click. 
+`plugin_name` is also optional. If `plugin` is provided but `plugin_name` is not, the name will default to the official name found in the WordPress Plugin Directory.
 
-If `plugin` is provided but `plugin_name` is empty, it will default to the official name on WordPress Plugin list.
+Example: If the plugin you'd like to recommend is https://wordpress.org/plugins/hello-dolly/, replace `your_plugin_slug` with `hello-dolly` and `Your Plugin Name` with `Hello Dolly`.
+
+NOTE: Your clients must have this plugin installed in order for the notification banner to be displayed.
 
 == Screenshots ==
 
-1. Dashboard looks
+1. Dashboard
 
 == Changelog ==
 
