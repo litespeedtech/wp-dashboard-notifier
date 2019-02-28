@@ -26,7 +26,7 @@
 
  */
 defined( 'WPINC' ) || exit ;
-define( 'DASH_NOTIFIER_MSG', json_encode( array( 'msg' => 'This is a message from your hosting provider. We have recently increased the server speed by installing LiteSpeed Web Server with the LSCache module. We recommend installing the LiteSpeed Cache plugin. This plugin includes a nice collection of optimization features, and also works with the server-side cache module to maximize your WordPress performance.', 'plugin' => 'litespeed-cache' ) ) ) ;
+// define( 'DASH_NOTIFIER_MSG', json_encode( array( 'msg' => 'This is a message from your hosting provider. We have recently increased the server speed by installing LiteSpeed Web Server with the LSCache module. We recommend installing the LiteSpeed Cache plugin. This plugin includes a nice collection of optimization features, and also works with the server-side cache module to maximize your WordPress performance.', 'plugin' => 'litespeed-cache' ) ) ) ;
 
 if ( defined( 'DASH_NOTIFIER_V' ) ) {
 	return ;
