@@ -15,9 +15,9 @@ This plugin can be used by developers and system administrators to add a notific
 
 To add a new banner, predefine a PHP constant called `DASH_NOTIFIER_MSG` before the `setup_theme` hook, like so:
 
-```
+`
 define( 'DASH_NOTIFIER_MSG', json_encode( array( 'msg' => 'Your message to display in banner', 'plugin' => 'your_plugin_slug', 'plugin_name' => 'Your Plugin Name' ) ) ) ;
-```
+`
 
 You can define 'DASH_NOTIFIER_MSG' in your own plugin or in `functions.php`, as long as it is bfore `setup_theme`.
 
