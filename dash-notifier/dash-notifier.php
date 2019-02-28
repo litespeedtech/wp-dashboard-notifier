@@ -40,29 +40,79 @@ if ( defined( 'DASH_NOTIFIER_MSG' ) ) {
 }
 
 // Display hook
-add_action( 'admin_print_styles', 'dash_notifier_admin_init' ) ;
+add_action( 'admin_print_styles', 'dash_notifier_new_msg' ) ;
 
-// Dismiss hook
-if ( ! empty( $_GET[ 'dash_notifier_action' ] ) ) {
-	$plugin_file = 'dash-notifier/dash-notifier.php' ;
+// Dismiss/install/uninstall hook
+add_action( 'admin_init', 'dash_notifier_admin_init' ) ;
+
+/**
+ * Admin init actions
+ * @since  1.0
+ */
+function dash_notifier_admin_init()
+{
+	// Dismiss hook
+	if ( empty( $_GET[ 'dash_notifier_action' ] ) || empty( $_GET[ 'nonce' ] ) ) {
+		return ;
+	}
+
+	if ( ! wp_verify_nonce( $_GET[ 'nonce' ], $_GET[ 'dash_notifier_action' ] ) ) {
+		return ;
+	}
+
+	if ( ! dash_notifier_can_operate() ) {
+		return ;
+	}
 
 	switch ( $_GET[ 'dash_notifier_action' ] ) {
 		case 'uninstall':
-			include_once( ABSPATH . 'wp-admin/includes/plugin.php' ) ;
-			file_put_contents( ABSPATH . '.dash_notifier_bypass', date( 'Y-m-d H:i:s' ) ) ;
-			delete_plugins( array( $plugin_file ) ) ;
+			dash_notifier_uninstall() ;
 			break;
 
 		case 'activate':
-			include_once( ABSPATH . 'wp-admin/includes/plugin.php' ) ;
-
+			dash_notifier_install() ;
 			break;
 
 		case 'dismiss':
 		default:
-			add_action( 'admin_init', 'dash_notifier_dismiss' ) ;
+			dash_notifier_dismiss() ;
 			break;
 	}
+}
+
+/**
+ * If current user can operate notifier related options
+ * @since  1.0
+ */
+function dash_notifier_can_operate()
+{
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return false ;
+	}
+
+	return true ;
+}
+
+
+/**
+ * Uninstall dash notifier
+ * @since  1.0
+ */
+function dash_notifier_uninstall()
+{
+	include_once( ABSPATH . 'wp-admin/includes/plugin.php' ) ;
+	file_put_contents( ABSPATH . '.dash_notifier_bypass', date( 'Y-m-d H:i:s' ) ) ;
+	delete_option( 'dash_notifier.msg' ) ;
+	delete_plugins( array( 'dash-notifier/dash-notifier.php' ) ) ;
+}
+
+/**
+ * Install the 3rd party plugin
+ * @since  1.0
+ */
+function dash_notifier_install()
+{
+	include_once( ABSPATH . 'wp-admin/includes/plugin.php' ) ;
 }
 
 /**
@@ -133,11 +183,15 @@ function dash_notifier_get_msg()
  * Check if can print dashboard message or not
  * @since  1.0
  */
-function dash_notifier_admin_init()
+function dash_notifier_new_msg()
 {
 	$screen = get_current_screen() ;
 	$screen = $screen ? $screen->id : false ;
 	if ( $screen != 'dashboard' ) {
+		return ;
+	}
+
+	if ( ! dash_notifier_can_operate() ) {
 		return ;
 	}
 
@@ -180,15 +234,16 @@ function dash_notifier_show_msg()
 		// Check if plugin is installed but not activated
 		$valid = validate_plugin( $plugin_path ) ;
 		if ( is_wp_error( $valid ) ) {
-			$install_txt = '<a href="?dash_notifier_action=activate" class="install-now button button-primary button-small">' . sprintf( __( 'Install %s now' ), $msg[ 'plugin_name' ] ) . '</a>' ;
+			$install_txt = '<a href="?dash_notifier_action=activate&nonce=' . wp_create_nonce( 'activate' ) . '" class="install-now button button-primary button-small">' . sprintf( __( 'Install %s now' ), $msg[ 'plugin_name' ] ) . '</a>' ;
 		}
 		else {
-			$install_txt = '<a href="?dash_notifier_action=activate" class="install-now button button-primary button-small">' . sprintf( _x( 'Activate %s', 'plugin' ), $msg[ 'plugin_name' ] ) . '</a>' ;
+			$install_txt = '<a href="?dash_notifier_action=activate&nonce=' . wp_create_nonce( 'activate' ) . '" class="install-now button button-primary button-small">' . sprintf( _x( 'Activate %s', 'plugin' ), $msg[ 'plugin_name' ] ) . '</a>' ;
 		}
 	}
 
-	$dont_show = '<a href="?dash_notifier_action=uninstall" class="button button-small dash-notifier-uninstall">' . __( 'Never Notify Me Again', 'dash-notifier' ) . '</a>' ;
+	$dont_show = '<a href="?dash_notifier_action=uninstall&nonce=' . wp_create_nonce( 'uninstall' ) . '" class="button button-small dash-notifier-uninstall">' . __( 'Never Notify Me Again', 'dash-notifier' ) . '</a>' ;
 
+	$nonce_dismiss = wp_create_nonce( 'dismiss' ) ;
 	echo <<<eot
 	<style>
 	div.dash-notifier-msg {
@@ -220,7 +275,7 @@ function dash_notifier_show_msg()
 	}
 	</style>
 	<div class="updated dash-notifier-msg">
-		<a class="dash-notifier-close notice-dismiss" href="?dash_notifier_action=dismiss">$dismiss_txt</a>
+		<a class="dash-notifier-close notice-dismiss" href="?dash_notifier_action=dismiss&nonce=$nonce_dismiss">$dismiss_txt</a>
 
 		<p style='display:flex;'>
 			<span>{$msg[msg]} $install_txt</span>
