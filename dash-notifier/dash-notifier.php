@@ -26,7 +26,7 @@
 
  */
 defined( 'WPINC' ) || exit ;
-// define( 'DASH_NOTIFIER_MSG', json_encode( array( 'msg' => 'This is a message from Godaddy. We recently increase the server speed by installed LSWS with LSCache module. Now it supports LSCWP. LiteSpeed Cache for WordPress (LSCWP) is an all-in-one site acceleration plugin, featuring an exclusive server-level cache and a collection of optimization features.', 'plugin' => 'litespeed-cache' ) ) ) ;
+define( 'DASH_NOTIFIER_MSG', json_encode( array( 'msg' => 'This is a message from your hosting provider. We have recently increased the server speed by installing LiteSpeed Web Server with the LSCache module. We recommend installing the LiteSpeed Cache plugin. This plugin includes a nice collection of optimization features, and also works with the server-side cache module to maximize your WordPress performance.', 'plugin' => 'litespeed-cache' ) ) ) ;
 
 if ( defined( 'DASH_NOTIFIER_V' ) ) {
 	return ;
@@ -47,6 +47,7 @@ add_action( 'admin_init', 'dash_notifier_admin_init' ) ;
 
 /**
  * Admin init actions
+ *
  * @since  1.0
  */
 function dash_notifier_admin_init()
@@ -82,6 +83,7 @@ function dash_notifier_admin_init()
 
 /**
  * If current user can operate notifier related options
+ *
  * @since  1.0
  */
 function dash_notifier_can_operate()
@@ -93,9 +95,58 @@ function dash_notifier_can_operate()
 	return true ;
 }
 
+/**
+ * Detect if the plugin is active or not
+ *
+ * @since  1.0
+ */
+function dash_notifier_is_plugin_active( $plugin )
+{
+	include_once( ABSPATH . 'wp-admin/includes/plugin.php' ) ;
+
+	$plugin_path = $plugin . '/' . $plugin . '.php' ;
+
+	return is_plugin_active( $plugin_path ) ;
+}
+
+/**
+ * Detect if the plugin is installed or not
+ *
+ * @since  1.0
+ */
+function dash_notifier_is_plugin_installed( $plugin )
+{
+	include_once( ABSPATH . 'wp-admin/includes/plugin.php' ) ;
+
+	$plugin_path = $plugin . '/' . $plugin . '.php' ;
+
+	$valid = validate_plugin( $plugin_path ) ;
+
+	return ! is_wp_error( $valid ) ;
+}
+
+/**
+ * Grab a plugin info from WordPress
+ *
+ * @since  1.0
+ */
+function dash_notifier_get_plugin_info( $slug )
+{
+	include_once( ABSPATH . 'wp-admin/includes/plugin-install.php' ) ;
+	$result = plugins_api( 'plugin_information', array( 'slug' => $slug ) ) ;
+
+	if ( is_wp_error( $result ) ) {
+		return false ;
+	}
+
+	return $result ;
+}
 
 /**
  * Uninstall dash notifier
+ *
+ * From developer of dash notifier: We miss you though!
+ *
  * @since  1.0
  */
 function dash_notifier_uninstall()
@@ -108,60 +159,98 @@ function dash_notifier_uninstall()
 
 /**
  * Install the 3rd party plugin
+ *
  * @since  1.0
  */
 function dash_notifier_install()
 {
-	include_once( ABSPATH . 'wp-admin/includes/plugin.php' ) ;
+	$msg = dash_notifier_get_msg() ;
+
+	if ( empty( $msg[ 'plugin' ] ) ) {
+		return ;
+	}
+
+	// Check if plugin is installed already
+	if ( dash_notifier_is_plugin_active( $msg[ 'plugin' ] ) ) {
+		return ;
+	}
+
+	/**
+	 * @see wp-admin/update.php
+	 */
+	include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php' ;
+	include_once ABSPATH . 'wp-admin/includes/file.php' ;
+	include_once ABSPATH . 'wp-admin/includes/misc.php' ;
+
+	$plugin_path = $msg[ 'plugin' ] . '/' . $msg[ 'plugin' ] . '.php' ;
+
+	if ( ! dash_notifier_is_plugin_installed( $msg[ 'plugin' ] ) ) {
+		$plugin_info = dash_notifier_get_plugin_info( $msg[ 'plugin' ] ) ;
+		if ( ! $plugin_info ) {
+			return ;
+		}
+		// Try to install plugin
+		try {
+			ob_start() ;
+			$skin = new \Automatic_Upgrader_Skin() ;
+			$upgrader = new \Plugin_Upgrader( $skin ) ;
+			$result = $upgrader->install( $plugin_info->download_link ) ;
+			ob_end_clean() ;
+		} catch ( \Exception $e ) {
+			return ;
+		}
+	}
+
+	if ( ! is_plugin_active( $plugin_path ) ) {
+		activate_plugin( $plugin_path ) ;
+	}
 }
 
 /**
  * Receive and store dashboard msg
+ *
  * @since  1.0
  */
 function dash_notifier_save_msg()
 {
 	$msg = json_decode( DASH_NOTIFIER_MSG, true ) ;
-	if ( $msg && ! empty( $msg[ 'msg' ] ) ) {
-		$existing_msg = dash_notifier_get_msg() ;
-
-		$plugin = $plugin_name = '' ;
-		if ( ! empty( $msg[ 'plugin' ] ) ) {
-			$plugin = $msg[ 'plugin' ] ;
-
-			if ( ! empty( $msg[ 'plugin_name' ] ) ) {
-				$plugin_name = $msg[ 'plugin_name' ] ;
-			}
-			// Query plugin name
-			else {
-				$data = wp_remote_retrieve_body( wp_remote_get( 'http://api.wordpress.org/plugins/info/1.0/' . $plugin . '.json' ) ) ;
-				if ( ! $data ) {
-					return ;
-				}
-
-				$data = json_decode( $data, true ) ;
-
-				if ( empty( $data[ 'name' ] ) ) {
-					return ;
-				}
-
-				$plugin_name = $data[ 'name' ] ;
-			}
-		}
-
-
-		// Append msg
-		$existing_msg[ 'msg' ] = $msg[ 'msg' ] ;
-		$existing_msg[ 'msg_md5' ] = md5( $msg[ 'msg' ] ) ;
-		$existing_msg[ 'plugin' ] = $plugin ;
-		$existing_msg[ 'plugin_name' ] = $plugin_name ;
-
-		update_option( 'dash_notifier.msg', $existing_msg ) ;
+	if ( ! $msg || empty( $msg[ 'msg' ] ) ) {
+		return ;
 	}
+
+	$existing_msg = dash_notifier_get_msg() ;
+
+	$plugin = $plugin_name = '' ;
+	if ( ! empty( $msg[ 'plugin' ] ) ) {
+		$plugin = $msg[ 'plugin' ] ;
+
+		if ( ! empty( $msg[ 'plugin_name' ] ) ) {
+			$plugin_name = $msg[ 'plugin_name' ] ;
+		}
+		// Query plugin name
+		else {
+			$data = dash_notifier_get_plugin_info( $plugin ) ;
+			if ( ! $data ) {
+				return ;
+			}
+
+			$plugin_name = $data->name ;
+		}
+	}
+
+
+	// Append msg
+	$existing_msg[ 'msg' ] = $msg[ 'msg' ] ;
+	$existing_msg[ 'msg_md5' ] = md5( $msg[ 'msg' ] ) ;
+	$existing_msg[ 'plugin' ] = $plugin ;
+	$existing_msg[ 'plugin_name' ] = $plugin_name ;
+
+	update_option( 'dash_notifier.msg', $existing_msg ) ;
 }
 
 /**
  * Read current msg
+ *
  * @since  1.0
  */
 function dash_notifier_get_msg()
@@ -181,6 +270,7 @@ function dash_notifier_get_msg()
 
 /**
  * Check if can print dashboard message or not
+ *
  * @since  1.0
  */
 function dash_notifier_new_msg()
@@ -203,8 +293,7 @@ function dash_notifier_new_msg()
 
 	if ( ! empty( $msg[ 'plugin' ] ) ) {
 		// Check if plugin is installed already
-		include_once( ABSPATH . 'wp-admin/includes/plugin.php' ) ;
-		if ( is_plugin_active( $msg[ 'plugin' ] ) ) {
+		if ( dash_notifier_is_plugin_active( $msg[ 'plugin' ] ) ) {
 			return ;
 		}
 	}
@@ -214,6 +303,7 @@ function dash_notifier_new_msg()
 
 /**
  * Print dashboard message
+ *
  * @since  1.0
  */
 function dash_notifier_show_msg()
@@ -222,26 +312,23 @@ function dash_notifier_show_msg()
 
 	$dismiss_txt = __( 'Dismiss' ) ;
 
-	$install_txt = '' ;
+	$install_link = '' ;
 	if ( ! empty( $msg[ 'plugin' ] ) && ! empty( $msg[ 'plugin_name' ] ) ) {
-		$plugin_path = $msg[ 'plugin' ] . '/' . $msg[ 'plugin' ] . '.php' ;
 		// If plugin installed, no need to show msg
-		include_once( ABSPATH . 'wp-admin/includes/plugin.php' ) ;
-		if ( is_plugin_active( $plugin_path ) ) {
+		if ( dash_notifier_is_plugin_active( $msg[ 'plugin' ] ) ) {
 			return ;
 		}
 
 		// Check if plugin is installed but not activated
-		$valid = validate_plugin( $plugin_path ) ;
-		if ( is_wp_error( $valid ) ) {
-			$install_txt = '<a href="?dash_notifier_action=activate&nonce=' . wp_create_nonce( 'activate' ) . '" class="install-now button button-primary button-small">' . sprintf( __( 'Install %s now' ), $msg[ 'plugin_name' ] ) . '</a>' ;
+		if ( dash_notifier_is_plugin_installed( $msg[ 'plugin' ] ) ) {
+			$install_link = '<a href="?dash_notifier_action=activate&nonce=' . wp_create_nonce( 'activate' ) . '" class="install-now button button-primary button-small">' . sprintf( _x( 'Activate %s', 'plugin' ), $msg[ 'plugin_name' ] ) . '</a>' ;
 		}
 		else {
-			$install_txt = '<a href="?dash_notifier_action=activate&nonce=' . wp_create_nonce( 'activate' ) . '" class="install-now button button-primary button-small">' . sprintf( _x( 'Activate %s', 'plugin' ), $msg[ 'plugin_name' ] ) . '</a>' ;
+			$install_link = '<a href="?dash_notifier_action=activate&nonce=' . wp_create_nonce( 'activate' ) . '" class="install-now button button-primary button-small">' . sprintf( __( 'Install %s now' ), $msg[ 'plugin_name' ] ) . '</a>' ;
 		}
 	}
 
-	$dont_show = '<a href="?dash_notifier_action=uninstall&nonce=' . wp_create_nonce( 'uninstall' ) . '" class="button button-small dash-notifier-uninstall">' . __( 'Never Notify Me Again', 'dash-notifier' ) . '</a>' ;
+	$dont_show_link = '<a href="?dash_notifier_action=uninstall&nonce=' . wp_create_nonce( 'uninstall' ) . '" class="button button-small dash-notifier-uninstall">' . __( 'Never Notify Me Again', 'dash-notifier' ) . '</a>' ;
 
 	$nonce_dismiss = wp_create_nonce( 'dismiss' ) ;
 	echo <<<eot
@@ -277,9 +364,10 @@ function dash_notifier_show_msg()
 	<div class="updated dash-notifier-msg">
 		<a class="dash-notifier-close notice-dismiss" href="?dash_notifier_action=dismiss&nonce=$nonce_dismiss">$dismiss_txt</a>
 
+		<p>{$msg[msg]}</p>
 		<p style='display:flex;'>
-			<span>{$msg[msg]} $install_txt</span>
-			$dont_show
+			$install_link
+			$dont_show_link
 		</p>
 	</div>
 eot;
@@ -287,6 +375,7 @@ eot;
 
 /**
  * Dismiss current dashboard message
+ *
  * @since  1.0
  */
 function dash_notifier_dismiss()

@@ -2,7 +2,7 @@
 Contributors: LiteSpeedTech
 Tags: dashboard notify, plugin installer
 Requires at least: 4.0
-Tested up to: 5.0.3
+Tested up to: 5.1
 Stable tag: 1.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
@@ -21,7 +21,7 @@ define( 'DASH_NOTIFIER_MSG', json_encode( array( 'msg' => 'Your message to displ
 
 You can define 'DASH_NOTIFIER_MSG' in your own plugin or in `functions.php`, as long as it is bfore `setup_theme`.
 
-`plugin` is optional. If set, an install button will be included with the message, allowing the client to install the plugin in one click. 
+`plugin` is optional. If set, an install button will be included with the message, allowing the client to install the plugin in one click.
 `plugin_name` is also optional. If `plugin` is provided but `plugin_name` is not, the name will default to the official name found in the WordPress Plugin Directory.
 
 Example: If the plugin you'd like to recommend is https://wordpress.org/plugins/hello-dolly/, replace `your_plugin_slug` with `hello-dolly` and `Your Plugin Name` with `Hello Dolly`.
@@ -34,5 +34,5 @@ NOTE: Your clients must have this plugin installed in order for the notification
 
 == Changelog ==
 
-= 1.0 - Feb 20 2019 =
+= 1.0 - Feb 28 2019 =
 * 🎉 Initial Release.
