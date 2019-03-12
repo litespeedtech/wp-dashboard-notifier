@@ -3,7 +3,7 @@ Contributors: LiteSpeedTech
 Tags: dashboard notify, plugin installer
 Requires at least: 4.0
 Tested up to: 5.1
-Stable tag: 1.0
+Stable tag: 1.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
@@ -34,6 +34,9 @@ The `plugin_name` parameter is also optional. If `plugin` is provided but `plugi
 1. Dashboard
 
 == Changelog ==
+
+= 1.1 - Mar 12 2019 =
+* [Tweak] Able to save message when using short init.
 
 = 1.0 - Feb 28 2019 =
 * 🎉 Initial Release.
