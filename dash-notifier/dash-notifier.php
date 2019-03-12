@@ -35,8 +35,9 @@ if ( defined( 'DASH_NOTIFIER_V' ) ) {
 define( 'DASH_NOTIFIER_V', '1.0' ) ;
 
 // Storage hook
-if ( defined( 'DASH_NOTIFIER_MSG' ) ) {
-	add_action( 'setup_theme', 'dash_notifier_save_msg' ) ;
+add_action( 'setup_theme', 'dash_notifier_save_msg' ) ;
+if ( defined( 'SHORTINIT' ) ) {
+	dash_notifier_save_msg() ;
 }
 
 // Display hook
@@ -216,6 +217,10 @@ function dash_notifier_install()
  */
 function dash_notifier_save_msg()
 {
+	if ( ! defined( 'DASH_NOTIFIER_MSG' ) ) {
+		return ;
+	}
+
 	$msg = json_decode( DASH_NOTIFIER_MSG, true ) ;
 	if ( ! $msg || empty( $msg[ 'msg' ] ) ) {
 		return ;
