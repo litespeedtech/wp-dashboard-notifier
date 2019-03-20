@@ -3,7 +3,7 @@
  * Plugin Name:       Dash Notifier
  * Plugin URI:        https://github.com/litespeedtech/wp-dashboard-notifier
  * Description:       WordPress dashboard notifier
- * Version:           1.1
+ * Version:           1.1.1
  * Author:            LiteSpeed Technologies
  * License:           GPLv3
  * License URI:       http://www.gnu.org/licenses/gpl.html
@@ -32,7 +32,7 @@ if ( defined( 'DASH_NOTIFIER_V' ) ) {
 	return ;
 }
 
-define( 'DASH_NOTIFIER_V', '1.1' ) ;
+define( 'DASH_NOTIFIER_V', '1.1.1' ) ;
 
 // Storage hook
 add_action( 'setup_theme', 'dash_notifier_save_msg' ) ;
@@ -158,6 +158,8 @@ function dash_notifier_uninstall()
 	include_once( ABSPATH . 'wp-admin/includes/plugin.php' ) ;
 	file_put_contents( ABSPATH . '.dash_notifier_bypass', date( 'Y-m-d H:i:s' ) ) ;
 	delete_option( 'dash_notifier.msg' ) ;
+
+	dash_notifier_is_plugin_active( 'dash-notifier' ) && deactivate_plugins( 'dash-notifier/dash-notifier.php' ) ;
 	delete_plugins( array( 'dash-notifier/dash-notifier.php' ) ) ;
 }
 
