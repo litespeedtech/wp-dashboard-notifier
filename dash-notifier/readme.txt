@@ -3,7 +3,7 @@ Contributors: LiteSpeedTech
 Tags: dashboard notify, plugin installer
 Requires at least: 4.0
 Tested up to: 5.1.1
-Stable tag: 1.1.1
+Stable tag: 1.1.2
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
@@ -34,6 +34,9 @@ The `plugin_name` parameter is also optional. If `plugin` is provided but `plugi
 1. Dashboard
 
 == Changelog ==
+
+= 1.1.2 - Apr 11 2019 =
+* [Update] Fixed a potential PHP notice in certain PHP environment.
 
 = 1.1.1 - Mar 20 2019 =
 * 🐞 Deactivate notifier before uninstalling to avoid warning in plugin list.

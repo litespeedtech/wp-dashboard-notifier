@@ -3,7 +3,7 @@
  * Plugin Name:       Dash Notifier
  * Plugin URI:        https://github.com/litespeedtech/wp-dashboard-notifier
  * Description:       WordPress dashboard notifier
- * Version:           1.1.1
+ * Version:           1.1.2
  * Author:            LiteSpeed Technologies
  * License:           GPLv3
  * License URI:       http://www.gnu.org/licenses/gpl.html
@@ -32,7 +32,7 @@ if ( defined( 'DASH_NOTIFIER_V' ) ) {
 	return ;
 }
 
-define( 'DASH_NOTIFIER_V', '1.1.1' ) ;
+define( 'DASH_NOTIFIER_V', '1.1.2' ) ;
 
 // Storage hook
 add_action( 'setup_theme', 'dash_notifier_save_msg' ) ;
@@ -341,6 +341,7 @@ function dash_notifier_show_msg()
 	$dont_show_link = '<a href="?dash_notifier_action=uninstall&nonce=' . wp_create_nonce( 'uninstall' ) . '" class="button button-small dash-notifier-uninstall">' . __( 'Never Notify Me Again', 'dash-notifier' ) . '</a>' ;
 
 	$nonce_dismiss = wp_create_nonce( 'dismiss' ) ;
+	$msg_con = $msg[ 'msg' ] ;
 	echo <<<eot
 	<style>
 	div.dash-notifier-msg {
@@ -374,7 +375,7 @@ function dash_notifier_show_msg()
 	<div class="updated dash-notifier-msg">
 		<a class="dash-notifier-close notice-dismiss" href="?dash_notifier_action=dismiss&nonce=$nonce_dismiss">$dismiss_txt</a>
 
-		<p>{$msg[msg]}</p>
+		<p>$msg_con</p>
 		<p style='display:flex;'>
 			$install_link
 			$dont_show_link
