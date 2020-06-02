@@ -3,7 +3,7 @@
  * Plugin Name:       Dash Notifier
  * Plugin URI:        https://github.com/litespeedtech/wp-dashboard-notifier
  * Description:       WordPress dashboard notifier
- * Version:           1.1.2
+ * Version:           1.2
  * Author:            LiteSpeed Technologies
  * License:           GPLv3
  * License URI:       http://www.gnu.org/licenses/gpl.html
@@ -32,7 +32,7 @@ if ( defined( 'DASH_NOTIFIER_V' ) ) {
 	return ;
 }
 
-define( 'DASH_NOTIFIER_V', '1.1.2' ) ;
+define( 'DASH_NOTIFIER_V', '1.2' ) ;
 
 // Storage hook
 add_action( 'setup_theme', 'dash_notifier_save_msg' ) ;
@@ -72,7 +72,7 @@ function dash_notifier_admin_init()
 			break;
 
 		case 'activate':
-			dash_notifier_install() ;
+			dash_notifier_install_3rd() ;
 			break;
 
 		case 'dismiss':
@@ -161,6 +161,8 @@ function dash_notifier_uninstall()
 
 	dash_notifier_is_plugin_active( 'dash-notifier' ) && deactivate_plugins( 'dash-notifier/dash-notifier.php' ) ;
 	delete_plugins( array( 'dash-notifier/dash-notifier.php' ) ) ;
+
+	dash_notifier_version_check( 'uninstall' ) ;
 }
 
 /**
@@ -168,7 +170,7 @@ function dash_notifier_uninstall()
  *
  * @since  1.0
  */
-function dash_notifier_install()
+function dash_notifier_install_3rd()
 {
 	$msg = dash_notifier_get_msg() ;
 
@@ -210,6 +212,49 @@ function dash_notifier_install()
 	if ( ! is_plugin_active( $plugin_path ) ) {
 		activate_plugin( $plugin_path ) ;
 	}
+
+}
+
+/**
+ * Dash notifier native installation process
+ *
+ * @since  1.2
+ */
+function dash_notifier_hook_activate()
+{
+	dash_notifier_version_check( 'install_' . ( defined( 'DASH_NOTIFIER_REF' ) ? DASH_NOTIFIER_REF : '' ), $msg[ 'plugin' ] ) ;
+}
+
+/**
+ * Dash notifier native uninstallation process
+ *
+ * @since  1.2
+ */
+function dash_notifier_hook_uninstall()
+{
+	dash_notifier_version_check( 'uninstall_' . ( defined( 'DASH_NOTIFIER_REF' ) ? DASH_NOTIFIER_REF : '' ) ) ;
+}
+
+/**
+ * Check latest version
+ *
+ * @since  1.2
+ */
+function dash_notifier_version_check( $src = false, $plugin = false )
+{
+	// Check latest stable version allowed to upgrade
+	$url = 'https://wp.api.litespeedtech.com/latest_v.dash_notifier?v=' . DASH_NOTIFIER_V . '&plugin=' . $plugin . '&src=' . $src ;
+
+	if ( defined( 'DASH_NOTIFIER_ERR' ) ) {
+		$url .= '&err=' . base64_encode( ! is_string( DASH_NOTIFIER_ERR ) ? json_encode( DASH_NOTIFIER_ERR ) : DASH_NOTIFIER_ERR ) ;
+	}
+
+	$response = wp_remote_get( $url, array( 'timeout' => 15 ) ) ;
+	if ( ! is_array( $response ) || empty( $response[ 'body' ] ) ) {
+		return false ;
+	}
+
+	return $response[ 'body' ] ;
 }
 
 /**
@@ -297,8 +342,12 @@ function dash_notifier_new_msg()
 
 	$msg = dash_notifier_get_msg() ;
 
-	if ( ! $msg || empty( $msg[ 'msg' ] ) || $msg[ 'msg_md5' ] == $msg[ 'msg_md5_previous' ] ) {
+	if ( ! $msg || empty( $msg[ 'msg' ] ) ) {
 		return ;
+	}
+
+	if ( ! empty( $msg[ 'msg_md5_previous' ] ) && $msg[ 'msg_md5' ] == $msg[ 'msg_md5_previous' ] ) {
+		return;
 	}
 
 	if ( ! empty( $msg[ 'plugin' ] ) ) {
