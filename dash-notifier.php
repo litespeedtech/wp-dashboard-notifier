@@ -9,7 +9,7 @@
  * License URI:       http://www.gnu.org/licenses/gpl.html
  * Text Domain:       dash-notifier
  *
- * Copyright (C) 2015-2017 LiteSpeed Technologies, Inc.
+ * Copyright (C) 2015-2021 LiteSpeed Technologies, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,45 +25,44 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
  */
-defined( 'WPINC' ) || exit ;
+defined( 'WPINC' ) || exit;
 // define( 'DASH_NOTIFIER_MSG', json_encode( array( 'msg' => 'This is a message from your hosting provider. We have recently increased the server speed by installing LiteSpeed Web Server with the LSCache module. We recommend installing the LiteSpeed Cache plugin. This plugin includes a nice collection of optimization features, and also works with the server-side cache module to maximize your WordPress performance.', 'plugin' => 'litespeed-cache' ) ) ) ;
 
 if ( defined( 'DASH_NOTIFIER_V' ) ) {
-	return ;
+	return;
 }
 
-define( 'DASH_NOTIFIER_V', '1.2' ) ;
+define( 'DASH_NOTIFIER_V', '1.2' );
 
 // Storage hook
-add_action( 'setup_theme', 'dash_notifier_save_msg' ) ;
+add_action( 'setup_theme', 'dash_notifier_save_msg' );
 if ( defined( 'SHORTINIT' ) ) {
-	dash_notifier_save_msg() ;
+	dash_notifier_save_msg();
 }
 
 // Display hook
-add_action( 'admin_print_styles', 'dash_notifier_new_msg' ) ;
+add_action( 'admin_print_styles', 'dash_notifier_new_msg' );
 
 // Dismiss/install/uninstall hook
-add_action( 'admin_init', 'dash_notifier_admin_init' ) ;
+add_action( 'admin_init', 'dash_notifier_admin_init' );
 
 /**
  * Admin init actions
  *
  * @since  1.0
  */
-function dash_notifier_admin_init()
-{
+function dash_notifier_admin_init() {
 	// Dismiss hook
 	if ( empty( $_GET[ 'dash_notifier_action' ] ) || empty( $_GET[ 'nonce' ] ) ) {
-		return ;
+		return;
 	}
 
 	if ( ! wp_verify_nonce( $_GET[ 'nonce' ], $_GET[ 'dash_notifier_action' ] ) ) {
-		return ;
+		return;
 	}
 
 	if ( ! dash_notifier_can_operate() ) {
-		return ;
+		return;
 	}
 
 	switch ( $_GET[ 'dash_notifier_action' ] ) {
@@ -161,8 +160,6 @@ function dash_notifier_uninstall()
 
 	dash_notifier_is_plugin_active( 'dash-notifier' ) && deactivate_plugins( 'dash-notifier/dash-notifier.php' ) ;
 	delete_plugins( array( 'dash-notifier/dash-notifier.php' ) ) ;
-
-	dash_notifier_version_check( 'uninstall' ) ;
 }
 
 /**
@@ -213,48 +210,6 @@ function dash_notifier_install_3rd()
 		activate_plugin( $plugin_path ) ;
 	}
 
-}
-
-/**
- * Dash notifier native installation process
- *
- * @since  1.2
- */
-function dash_notifier_hook_activate()
-{
-	dash_notifier_version_check( 'install_' . ( defined( 'DASH_NOTIFIER_REF' ) ? DASH_NOTIFIER_REF : '' ), $msg[ 'plugin' ] ) ;
-}
-
-/**
- * Dash notifier native uninstallation process
- *
- * @since  1.2
- */
-function dash_notifier_hook_uninstall()
-{
-	dash_notifier_version_check( 'uninstall_' . ( defined( 'DASH_NOTIFIER_REF' ) ? DASH_NOTIFIER_REF : '' ) ) ;
-}
-
-/**
- * Check latest version
- *
- * @since  1.2
- */
-function dash_notifier_version_check( $src = false, $plugin = false )
-{
-	// Check latest stable version allowed to upgrade
-	$url = 'https://wp.api.litespeedtech.com/latest_v.dash_notifier?v=' . DASH_NOTIFIER_V . '&plugin=' . $plugin . '&src=' . $src ;
-
-	if ( defined( 'DASH_NOTIFIER_ERR' ) ) {
-		$url .= '&err=' . base64_encode( ! is_string( DASH_NOTIFIER_ERR ) ? json_encode( DASH_NOTIFIER_ERR ) : DASH_NOTIFIER_ERR ) ;
-	}
-
-	$response = wp_remote_get( $url, array( 'timeout' => 15 ) ) ;
-	if ( ! is_array( $response ) || empty( $response[ 'body' ] ) ) {
-		return false ;
-	}
-
-	return $response[ 'body' ] ;
 }
 
 /**
