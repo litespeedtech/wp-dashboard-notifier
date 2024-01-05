@@ -199,7 +199,7 @@ function dash_notifier_install_3rd()
 			ob_start() ;
 			$skin = new \Automatic_Upgrader_Skin() ;
 			$upgrader = new \Plugin_Upgrader( $skin ) ;
-			$result = $upgrader->install( $plugin_info->download_link ) ;
+			$upgrader->install( $plugin_info->download_link ) ;
 			ob_end_clean() ;
 		} catch ( \Exception $e ) {
 			return ;
