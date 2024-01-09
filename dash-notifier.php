@@ -9,7 +9,7 @@
  * License URI:       http://www.gnu.org/licenses/gpl.html
  * Text Domain:       dash-notifier
  *
- * Copyright (C) 2015-2021 LiteSpeed Technologies, Inc.
+ * Copyright (C) 2015-2024 LiteSpeed Technologies, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -129,7 +129,7 @@ function dash_notifier_is_plugin_installed( $plugin )
 }
 
 /**
- * Grab a plugin info from WordPress
+ * Grab plugin info from WordPress
  *
  * @since  1.0
  */
@@ -163,7 +163,7 @@ function dash_notifier_uninstall()
 }
 
 /**
- * Install the 3rd party plugin
+ * Install the third party plugin
  *
  * @since  1.0
  */
@@ -175,7 +175,7 @@ function dash_notifier_install_3rd()
 		return ;
 	}
 
-	// Check if plugin is installed already
+	// Check if the plugin is installed already
 	if ( dash_notifier_is_plugin_active( $msg[ 'plugin' ] ) ) {
 		return ;
 	}
@@ -199,7 +199,7 @@ function dash_notifier_install_3rd()
 			ob_start() ;
 			$skin = new \Automatic_Upgrader_Skin() ;
 			$upgrader = new \Plugin_Upgrader( $skin ) ;
-			$result = $upgrader->install( $plugin_info->download_link ) ;
+			$upgrader->install( $plugin_info->download_link ) ;
 			ob_end_clean() ;
 		} catch ( \Exception $e ) {
 			return ;
@@ -279,7 +279,7 @@ function dash_notifier_get_msg()
 }
 
 /**
- * Check if can print dashboard message or not
+ * Check if the dashboard message can be printed or not.
  *
  * @since  1.0
  */
@@ -306,7 +306,7 @@ function dash_notifier_new_msg()
 	}
 
 	if ( ! empty( $msg[ 'plugin' ] ) ) {
-		// Check if plugin is installed already
+		// Check if the plugin is installed already
 		if ( dash_notifier_is_plugin_active( $msg[ 'plugin' ] ) ) {
 			return ;
 		}
@@ -333,7 +333,7 @@ function dash_notifier_show_msg()
 			return ;
 		}
 
-		// Check if plugin is installed but not activated
+		// Check if the plugin is installed but not activated
 		if ( dash_notifier_is_plugin_installed( $msg[ 'plugin' ] ) ) {
 			$install_link = '<a href="?dash_notifier_action=activate&nonce=' . wp_create_nonce( 'activate' ) . '" class="install-now button button-primary button-small">' . sprintf( _x( 'Activate %s', 'plugin' ), $msg[ 'plugin_name' ] ) . '</a>' ;
 		}
